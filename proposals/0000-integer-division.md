@@ -11,7 +11,7 @@
 
 ## Introduction
 
-Like the majority of programming languages, Swift uses "flooring division". This proposal
+Like the majority of programming languages, Swift uses "truncating division". This proposal
 would add APIs with explicit control of rounding in division, which is generally useful, as well
 as a new `mod` function that makes the commonsense behavior of modular arithmetic
 somewhat easier to achieve.
