@@ -1,4 +1,4 @@
-# Integer division revisions
+# Division revision
 
 * Proposal: [SE-NNNN](NNNN-integer-division.md)
 * Authors: [Stephen Canon](https://github.com/stephentyrone)
@@ -37,8 +37,8 @@ operators match the behavior of C, C++, C#, D, Go, Java, Julia, Kotlin, and most
 languages in rounding the quotient `q` *towards zero* (also called "truncating division"). This
 is equivalent to adding the requirement that the sign of `r` matches the sign of `b`.
 
-However, other rounding rules are possible, and even desireable. Knuth argued for
-"flooring division", where the quotient is always rounded *down* (towards minus infinity).
+However, other rounding rules are possible, and even desireable. Knuth [TAoCP, Vol. 1] argues
+for "flooring division", where the quotient is always rounded *down* (towards minus infinity).
 This has the desirable property that the sign of the remainder matches the sign of the
 divisor. Why is this property desirable? Frequently when we use the remainder operator, we
 have a constant positive divisor. E.g. consider a much-discussed check to see if a number is
@@ -48,11 +48,11 @@ func isOdd(x: Int) -> Bool {
   x % 2 == 1
 }
 ~~~~
-If you followed the isEven / isOdd threads on Swift-Evolution, you already know this, but
-this implementation has a bug! Consider what happens when `x == -1`: because Swift uses
-truncating division, `-1/2 = 0` and `-1%2 = -1`, so the test returns `false`. Using flooring
-division instead fixes this problem, because the remainder will always be in the set {0, 1}--0
-if the number is even, and 1 if it is odd.
+If you followed the "Even and Odd Integers" thread on Swift-Evolution, you already know this,
+but this implementation has a bug! Consider what happens when `x == -1`: because Swift 
+uses truncating division, `-1/2 = 0` and `-1%2 = -1`, so the test returns `false`. If we used
+flooring division instead, we would not have this problem, because the remainder will always
+be in the set {0, 1}--0 if the number is even, and 1 if it is odd.
 
 Division that rounds up is another common use case, especially when working with sizes.
 How many `UInt` words are required to store a `n`-bit integer? In the standard lib, this appears
@@ -75,13 +75,13 @@ arithmetic using integer operations.
 - Rename `FloatingPointRoundingRule` to `RoundingRule`.
 
 - Provide new divide functions, or extend existing functions where possible, to take an 
-optional allow `RoundingRule` parameter to control the rounding direction for the quotient.
+optional `RoundingRule` parameter to control the rounding direction for the quotient.
 
 - Provide a simple affordance specifically for the mathematical modulo operation (distinct
 from the remainder operation `%`).
 
 - Provide a new `shiftedRight`  function with rounding control, specifically for the extremely
-common case of division by known powers of two. This is needed for for implementing
+common case of division by known powers of two. This is needed for implementing
 software backed floating-point (like generic conversions from integer to floating-point), but
 is also exceedingly useful for implementing a number of integer arithmetic operations, and is
 found in most bignum libraries.
@@ -173,9 +173,9 @@ func shiftedRight<Count>(
   rounding: RoundingRule = .down
 ) -> (result: Self, isExact: Bool) where Count : BinaryInteger
 ~~~~
-deprecate the existing `quotientAndRemainder(dividingBy:)` function.
+and deprecate the existing `quotientAndRemainder(dividingBy:)` function.
 
-3. On the `FixedWidthInteger` protocol, add the following function:
+On the `FixedWidthInteger` protocol, add the following function:
 ~~~~
 func dividedReportingOverflow(by: Self, rounding: RoundingRule = .towardZero)
   -> (quotient: Self, remainder: Self, overflow: Bool)
@@ -188,6 +188,24 @@ func dividingFullWidth(
 ) -> (quotient: Self, remainder: Self)
 ~~~~
 deprecate the existing `dividedReportingOverflow(by:)` and `remainderReportingOverflow(dividingBy:)` functions.
+
+Some notes:
+- `quotientAndRemainder` is less discoverable than `divded`--it requires knowing the semi-
+arcane technical names for these things, and we want this operation to be easy to find.
+
+- There are two common things that people try to do with the `%` operator. One is test 
+divisibility, which is already addressed by the new `isMultiple(of: )` function. The other
+is getting the residue mod some positive value. The new `mod`  function exists to cover the
+second use, so that users don't need to write out:
+~~~~
+x.divided(by: 7, rounding: .down).remainder
+~~~~
+and can instead use
+~~~~
+x.mod(7)
+~~~~
+The restriction that the modulus be positive avoids any confusion with rounding rules; the two
+reasonable candidates, flooring and euclidean division, agree in this case.
 
 ## Source compatibility
 
@@ -221,13 +239,16 @@ for picking the quotient somewhat counter-intuitive.
 flooring division because the divisor is known to be positive.
 
 2. Changing the behavior of the `/` and `%` operators to round `.down`, and using that as the
-default rounding mode for these new functions as well. In a perfect world where this was 
-Swift 1.0 *and* most users were not migrating from C-family languages, this would be almost
-a no-brainer. It really is a better definition of division (largely because the sign of the dividend
-is changed much more often than the sign of the divisor in real use, and because it matches
-shifts for signed values which allows for better optimization with constant powers-of-two.
+default rounding mode for these new functions as well.
 
-It's a tough sell for Swift today. That said, Python changed the behavior of `/` far more
+- In a perfect world where this was  Swift 1.0 *and* most users were not migrating from
+C-family languages, this would be almost a no-brainer. It really is a better definition of
+division (largely because the sign of the dividend is changed much more often than the 
+sign of the divisor in real use, and because it matches shifts for signed values which allows 
+for better optimization with constant powers-of-two. (Note to future implementors of new
+standard libraries and languages: adopt flooring division while you can)
+
+- It's a tough sell for Swift today. That said, Python changed the behavior of `/` far more
 dramatically in 3.0, and the sky did not fall. Furthermore, using these operators with negative
 values and caring about the precise rounding turns out to be pretty rare, as evidenced by the
 fact that most people are blissfully ignorant of the variantion between languages until this
