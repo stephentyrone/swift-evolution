@@ -43,11 +43,11 @@ This has the desirable property that the sign of the remainder matches the sign 
 divisor. Why is this property desirable? Frequently when we use the remainder operator, we
 have a constant positive divisor. E.g. consider a much-discussed check to see if a number is
 odd:
-~~~~
+```swift
 func isOdd(x: Int) -> Bool {
   x % 2 == 1
 }
-~~~~
+```
 If you followed the "Even and Odd Integers" thread on Swift-Evolution, you already know this,
 but this implementation has a bug! Consider what happens when `x == -1`: because Swift 
 uses truncating division, `-1/2 = 0` and `-1%2 = -1`, so the test returns `false`. If we used
@@ -57,16 +57,16 @@ be in the set {0, 1}--0 if the number is even, and 1 if it is odd.
 Division that rounds up is another common use case, especially when working with sizes.
 How many `UInt` words are required to store a `n`-bit integer? In the standard lib, this appears
 in one place as follows:
-~~~~
+```swift
 let (quotient, remainder) = bitWidth.quotientAndRemainder(
   dividingBy: UInt64.bitWidth
 )
 for i in 0 ..< quotient + remainder.signum() {
-~~~~
+```
 if we can make division round up, this can be made much simpler:
-~~~~
+```swift
 for i in 0 ..< bitWidth.divided(by: UInt64.bitWidth, rounding: .up)
-~~~~
+```
 Even rounding to nearest has a use--it comes up when implementing decimal floating-point
 arithmetic using integer operations.
 
@@ -89,7 +89,7 @@ found in most bignum libraries.
 ## Detailed design
 
 On the  `BinaryInteger` protocol, add the following three functions:
-~~~~
+```swift
 /// Divides this value by `divisor`, rounding the result according to
 /// `rule` to produce `quotient` and `remainder`.
 ///
@@ -172,38 +172,38 @@ func shiftedRight<Count>(
   by: Count,
   rounding: RoundingRule = .down
 ) -> (result: Self, isExact: Bool) where Count : BinaryInteger
-~~~~
+```
 and deprecate the existing `quotientAndRemainder(dividingBy:)` function.
 
 On the `FixedWidthInteger` protocol, add the following function:
-~~~~
+```swift
 func dividedReportingOverflow(by: Self, rounding: RoundingRule = .towardZero)
   -> (quotient: Self, remainder: Self, overflow: Bool)
-~~~~
+```
 add the `rounding:` param to `dividingFullWidth`:
-~~~~
+```swift
 func dividingFullWidth(
   _: (high: Self, low: Self.Magnitude),
   rounding: RoundingRule = .towardZero
 ) -> (quotient: Self, remainder: Self)
-~~~~
-deprecate the existing `dividedReportingOverflow(by:)` and `remainderReportingOverflow(dividingBy:)` functions.
+```
+and deprecate the existing `dividedReportingOverflow(by:)` and `remainderReportingOverflow(dividingBy:)` functions.
 
 Some notes:
-- `quotientAndRemainder` is less discoverable than `divded`--it requires knowing the semi-
+`quotientAndRemainder` is less discoverable than `divded`--it requires knowing the semi-
 arcane technical names for these things, and we want this operation to be easy to find.
 
-- There are two common things that people try to do with the `%` operator. One is test 
+There are two common things that people try to do with the `%` operator. One is test 
 divisibility, which is already addressed by the new `isMultiple(of: )` function. The other
 is getting the residue mod some positive value. The new `mod`  function exists to cover the
 second use, so that users don't need to write out:
-~~~~
+```swift
 x.divided(by: 7, rounding: .down).remainder
-~~~~
+```
 and can instead use
-~~~~
+```swift
 x.mod(7)
-~~~~
+```
 The restriction that the modulus be positive avoids any confusion with rounding rules; the two
 reasonable candidates, flooring and euclidean division, agree in this case.
 
