@@ -12,6 +12,8 @@ extension String {
     public var anchor: Anchor
     public var fill: Character
 
+    // FIXME: What about full-width and wide characters?
+
     public init(
       minimumColumnWidth: Int = 0,
       anchor: Anchor = Anchor.right,

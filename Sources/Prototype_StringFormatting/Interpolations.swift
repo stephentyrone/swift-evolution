@@ -1,10 +1,3 @@
-extension Collection where SubSequence == Self {
-  mutating func _eat(_ n: Int = 1) -> SubSequence {
-    defer { self = self.dropFirst(n) }
-    return self.prefix(n)
-  }
-}
-
 public protocol SwiftyStringFormatting {
   // FIXME: Some of these, if fully defaulted, might conflict with
   // CustomStringConvertible...
@@ -16,40 +9,16 @@ public protocol SwiftyStringFormatting {
     align: String.Alignment // .right(columns: 0, fill: " ") by default
   ) where S.Element: CustomStringConvertible
 
-  // %x and %X
+  // %x, %X, %o, %d, %i
+  // TODO: %u?
   mutating func appendInterpolation<I: FixedWidthInteger>(
-    hex: I,
-    uppercase: Bool, // false by default
-    includePrefix: Bool, // false by default
-    minDigits: Int, // 1 by default
-    explicitPositiveSign: Character?, // nil by default
-    align: String.Alignment) // .right(columns: 0, fill: " ") by default
-
-  // %o
-  mutating func appendInterpolation<I: FixedWidthInteger>(
-    octal: I,
-    includePrefix: Bool, // false by default
-    minDigits: Int, // 1 by default
-    explicitPositiveSign: Character?, // nil by default
-    align: String.Alignment) // .right(columns: 0, fill: " ") by default
-
-  // %d, %i
-  mutating func appendInterpolation<I: FixedWidthInteger>(
-    _: I,
-    thousandsSeparator: Character?, // nil by default
-    minDigits: Int, // 1 by default
-    explicitPositiveSign: Character?, // nil by default
-    align: String.Alignment) // .right(columns: 0, fill: " ") by default
-
-  // TODO: Consider removing this one...
-  // %u
-  mutating func appendInterpolation<I: FixedWidthInteger>(
-    asUnsigned: I,
-    thousandsSeparator: Character?, // nil by default
-    minDigits: Int, // 1 by default
-    align: String.Alignment) // .right(columns: 0, fill: " ") by default
+    _ value: I,
+    format: IntegerFormatting, // .decimal(minDigits: 1) by default
+    align: String.Alignment // .right(columns: 0, fill: " ") by default
+  )
 
   // %f, %F
+  // TODO: FloatFormatting struct
   mutating func appendInterpolation<F: FloatingPoint>(
     _ value: F,
     explicitRadix: Bool, // false by default
@@ -73,63 +42,11 @@ extension SwiftyStringFormatting {
   }
 
   public mutating func appendInterpolation<I: FixedWidthInteger>(
-    hex: I,
-    uppercase: Bool = false,
-    includePrefix: Bool = false,
-    minDigits: Int = 1,
-    explicitPositiveSign: Character? = nil,
-    align: String.Alignment = String.Alignment()
-  ) {
-    appendInterpolation(
-      hex: hex,
-      uppercase: uppercase,
-      includePrefix: includePrefix,
-      minDigits: minDigits,
-      explicitPositiveSign: explicitPositiveSign,
-      align: align)
-  }
-
-  public mutating func appendInterpolation<I: FixedWidthInteger>(
-    octal: I,
-    includePrefix: Bool = false,
-    minDigits: Int = 1,
-    explicitPositiveSign: Character? = nil,
-    align: String.Alignment = String.Alignment()
-  ) {
-    appendInterpolation(
-      octal: octal,
-      includePrefix: includePrefix,
-      minDigits: minDigits,
-      explicitPositiveSign: explicitPositiveSign,
-      align: align)
-  }
-
-  public mutating func appendInterpolation<I: FixedWidthInteger>(
     _ value: I,
-    thousandsSeparator: Character? = nil,
-    minDigits: Int = 1,
-    explicitPositiveSign: Character? = nil,
-    align: String.Alignment = String.Alignment()
+    format: IntegerFormatting, // .decimal(minDigits: 1) by default
+    align: String.Alignment // .right(columns: 0, fill: " ") by default
   ) {
-    appendInterpolation(
-      value,
-      thousandsSeparator: thousandsSeparator,
-      minDigits: minDigits,
-      explicitPositiveSign: explicitPositiveSign,
-      align: align)
-  }
-
-  public mutating func appendInterpolation<I: FixedWidthInteger>(
-    asUnsigned: I,
-    thousandsSeparator: Character? = nil,
-    minDigits: Int = 1,
-    align: String.Alignment = String.Alignment()
-  ) {
-    appendInterpolation(
-      asUnsigned: asUnsigned,
-      thousandsSeparator: thousandsSeparator,
-      minDigits: minDigits,
-      align: align)
+    appendInterpolation(value, format: format, align: align)
   }
 
   // %f, %F
@@ -153,7 +70,6 @@ extension SwiftyStringFormatting {
       explicitPositiveSign: explicitPositiveSign,
       align: align)
   }
-
 }
 
 extension DefaultStringInterpolation: SwiftyStringFormatting {
@@ -174,98 +90,13 @@ extension DefaultStringInterpolation: SwiftyStringFormatting {
   }
 
   public mutating func appendInterpolation<I: FixedWidthInteger>(
-    hex: I,
-    uppercase: Bool,
-    includePrefix: Bool,
-    minDigits: Int,
-    explicitPositiveSign: Character?,
-    align: String.Alignment = String.Alignment()
-  ) {
-    let addPrefix: String? = includePrefix ? (uppercase ? "0X" : "0x") : nil
-
-    let result = hex.format(.hex(
-      explicitPositiveSign: explicitPositiveSign,
-      prefix: hex == 0 ? nil : addPrefix,
-      minDigits: minDigits,
-      uppercase: uppercase))
-
-    self.appendInterpolation(result.aligned(align))
-  }
-
-  public mutating func appendInterpolation<I: FixedWidthInteger>(
-    octal: I,
-    includePrefix: Bool,
-    minDigits: Int,
-    explicitPositiveSign: Character?,
-    align: String.Alignment = String.Alignment()
-  ) {
-    let addPrefix: String? = includePrefix ? "0" : nil
-
-    let result: String
-
-    if octal == 0 && (includePrefix && minDigits == 0 || minDigits == 1) {
-      result = "0"
-    } else {
-      result = octal.format(IntegerFormatting(
-        radix: 8,
-        explicitPositiveSign: explicitPositiveSign,
-        prefix: addPrefix,
-        minDigits: addPrefix == nil ? minDigits : minDigits - 1,
-        uppercase: false))
-    }
-
-    self.appendInterpolation(result.aligned(align))
-  }
-
-  public mutating func appendInterpolation<I: FixedWidthInteger>(
     _ value: I,
-    thousandsSeparator: Character?,
-    minDigits: Int,
-    explicitPositiveSign: Character?,
-    align: String.Alignment
+    format: IntegerFormatting = .decimal,
+    align: String.Alignment = .right
   ) {
-    let valueStr = value.format(IntegerFormatting(
-      explicitPositiveSign: explicitPositiveSign,
-      prefix: nil,
-      minDigits: minDigits,
-      uppercase: false))
-
-    guard let thousands = thousandsSeparator else {
-      appendInterpolation(valueStr.aligned(align))
-      return
-    }
-
-    let hasSign = value < 0 || explicitPositiveSign != nil
-    let numLength = valueStr.count - (hasSign ? 1 : 0)
-    var result = ""
-    var scanner = valueStr[...]
-    if hasSign {
-      result.append(contentsOf: scanner._eat())
-    }
-    if numLength % 3 != 0 {
-      result.append(contentsOf: scanner._eat(numLength % 3))
-      if !scanner.isEmpty {
-        result.append(thousands)
-      }
-    }
-    while !scanner.isEmpty {
-      result.append(contentsOf: scanner._eat(3))
-      if !scanner.isEmpty {
-        result.append(thousands)
-      }
-    }
-    appendInterpolation(result.aligned(align))
+    appendInterpolation(value.format(format).aligned(align))
   }
 
-  public mutating func appendInterpolation<I: FixedWidthInteger>(
-    asUnsigned: I,
-    thousandsSeparator: Character?,
-    minDigits: Int,
-    align: String.Alignment
-  ) {
-    fatalError()
-
-  }
 
   // %f, %F
   public mutating func appendInterpolation<F: FloatingPoint>(
@@ -303,6 +134,5 @@ extension DefaultStringInterpolation: SwiftyStringFormatting {
 
     appendInterpolation(valueStr.aligned(align))
   }
-
 
 }
