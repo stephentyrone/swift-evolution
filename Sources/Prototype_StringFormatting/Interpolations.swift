@@ -6,7 +6,7 @@ public protocol SwiftyStringFormatting {
   mutating func appendInterpolation<S: Sequence>(
     _ s: S,
     maxPrefixLength: Int, // Int.max by default
-    align: String.Alignment // .right(columns: 0, fill: " ") by default
+    align: String.Alignment // .none
   ) where S.Element: CustomStringConvertible
 
   // %x, %X, %o, %d, %i
@@ -14,7 +14,7 @@ public protocol SwiftyStringFormatting {
   mutating func appendInterpolation<I: FixedWidthInteger>(
     _ value: I,
     format: IntegerFormatting, // .decimal(minDigits: 1) by default
-    align: String.Alignment // .right(columns: 0, fill: " ") by default
+    align: String.Alignment // .none
   )
 
   // %f, %F
@@ -27,7 +27,7 @@ public protocol SwiftyStringFormatting {
     zeroFillFinite: Bool, // false by default
     minDigits: Int, // 1 by default
     explicitPositiveSign: Character?, // nil by default
-    align: String.Alignment) // .right(columns: 0, fill: " ") by default
+    align: String.Alignment) // .none
 
 }
 
@@ -36,15 +36,15 @@ extension SwiftyStringFormatting {
   public mutating func appendInterpolation<S: Sequence>(
     _ s: S,
     maxPrefixLength: Int = Int.max,
-    align: String.Alignment = String.Alignment()
+    align: String.Alignment = .none
   ) where S.Element: CustomStringConvertible {
     appendInterpolation(s, maxPrefixLength: maxPrefixLength, align: align)
   }
 
   public mutating func appendInterpolation<I: FixedWidthInteger>(
     _ value: I,
-    format: IntegerFormatting, // .decimal(minDigits: 1) by default
-    align: String.Alignment // .right(columns: 0, fill: " ") by default
+    format: IntegerFormatting = .decimal(minDigits: 1),
+    align: String.Alignment = .none
   ) {
     appendInterpolation(value, format: format, align: align)
   }
@@ -58,7 +58,7 @@ extension SwiftyStringFormatting {
     zeroFillFinite: Bool = false,
     minDigits: Int = 1,
     explicitPositiveSign: Character? = nil,
-    align: String.Alignment = String.Alignment()
+    align: String.Alignment = .none
   ) {
     appendInterpolation(
       value,
@@ -77,7 +77,7 @@ extension DefaultStringInterpolation: SwiftyStringFormatting {
   public mutating func appendInterpolation<S: Sequence>(
     _ seq: S,
     maxPrefixLength: Int,
-    align: String.Alignment = String.Alignment()
+    align: String.Alignment
   ) where S.Element: CustomStringConvertible {
     var str = ""
     var iter = seq.makeIterator()
@@ -91,8 +91,8 @@ extension DefaultStringInterpolation: SwiftyStringFormatting {
 
   public mutating func appendInterpolation<I: FixedWidthInteger>(
     _ value: I,
-    format: IntegerFormatting = .decimal,
-    align: String.Alignment = .right
+    format: IntegerFormatting,
+    align: String.Alignment
   ) {
     appendInterpolation(value.format(format).aligned(align))
   }

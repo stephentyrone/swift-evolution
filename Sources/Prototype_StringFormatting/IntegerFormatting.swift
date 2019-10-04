@@ -146,12 +146,6 @@ public struct IntegerFormatting {
 
 }
 extension FixedWidthInteger {
-  public func format(_ options: IntegerFormatting = IntegerFormatting()) -> String {
-    var result = ""
-    self.format(options, into: &result)
-    return result
-  }
-
   public func format<OS: TextOutputStream>(
     _ options: IntegerFormatting = IntegerFormatting(), into os: inout OS
   ) {

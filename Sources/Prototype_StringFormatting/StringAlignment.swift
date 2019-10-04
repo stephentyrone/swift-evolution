@@ -24,15 +24,13 @@ extension String {
       self.fill = fill
     }
 
-    public static var right: Alignment {
-      Alignment(anchor: .right)
-    }
-    public static var left: Alignment {
-      Alignment(anchor: .left)
-    }
-    public static var center: Alignment {
-      Alignment(anchor: .center)
-    }
+    public static var right: Alignment { Alignment(anchor: .right) }
+
+    public static var left: Alignment { Alignment(anchor: .left) }
+
+    public static var center: Alignment { Alignment(anchor: .center) }
+
+    public static var none: Alignment { .right  }
 
     public static func right(
       columns: Int = 0, fill: Character = " "
