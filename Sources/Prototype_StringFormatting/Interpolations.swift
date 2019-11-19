@@ -95,6 +95,9 @@ extension DefaultStringInterpolation: SwiftyStringFormatting {
     align: String.Alignment
   ) {
     appendInterpolation(value.format(format).aligned(align))
+
+    // guard let spec = format.toFormatString(align) else { #condFail }
+    // ...
   }
 
 

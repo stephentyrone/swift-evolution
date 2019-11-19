@@ -2,21 +2,15 @@ extension String {
   public struct Alignment {
     // TODO: max length?
 
-    public enum Anchor {
-      case left
-      case right
-      case center
-    }
-
     public var minimumColumnWidth: Int
-    public var anchor: Anchor
+    public var anchor: AlignmentAnchor
     public var fill: Character
 
     // FIXME: What about full-width and wide characters?
 
     public init(
       minimumColumnWidth: Int = 0,
-      anchor: Anchor = Anchor.right,
+      anchor: AlignmentAnchor = .right,
       fill: Character = " "
     ) {
       self.minimumColumnWidth = minimumColumnWidth
@@ -64,26 +58,13 @@ extension String {
 
 extension StringProtocol {
   public func aligned(_ align: String.Alignment) -> String {
-    guard align.minimumColumnWidth > 0 else { return String(self) }
-
-    let segmentLength = self.count
-    let fillerCount = align.minimumColumnWidth - segmentLength
-
-    guard fillerCount > 0 else { return String(self) }
-
-    var filler = String(repeating: align.fill, count: fillerCount)
-    let insertIdx: String.Index
-    switch align.anchor {
-    case .left:  insertIdx = filler.startIndex
-    case .right: insertIdx = filler.endIndex
-    case .center:
-      insertIdx = filler.index(filler.startIndex, offsetBy: fillerCount / 2)
-    }
-    filler.insert(contentsOf: self, at: insertIdx)
-    return filler
+    var copy = String(self)
+    copy.pad(to: align.minimumColumnWidth, using: align.fill, align: align.anchor)
+    return copy
   }
 
   public func indented(_ columns: Int, fill: Character = " ") -> String {
     String(repeating: fill, count: columns) + self
   }
 }
+
