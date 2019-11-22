@@ -48,7 +48,7 @@ final class Prototype_StringFormatting: XCTestCase {
       for precision in (0..<11) {
         for width in (0..<15) {
           for align in [String.Alignment.left(columns: width), .right(columns: width)] {
-            let justify = align.anchor == .left ? "-" : ""
+            let justify = align.anchor == .start ? "-" : ""
 
             for (includePrefix) in [false, true] {
               let hash = includePrefix ? "#" : ""
@@ -66,7 +66,7 @@ final class Prototype_StringFormatting: XCTestCase {
                 }
 
                 // Special zero-fill
-                if align.anchor == .right && precision == 1 && width != 0 {
+                if align.anchor == .end && precision == 1 && width != 0 {
                   // It seems like a 0 width, even expressed as `%00x` is
                   // interpreted as just the 0 flag.
 
@@ -93,7 +93,7 @@ final class Prototype_StringFormatting: XCTestCase {
               }
 
               // Special zero-fill
-              if align.anchor == .right && precision == 1 && width != 0 {
+              if align.anchor == .end && precision == 1 && width != 0 {
                 // It seems like a 0 width, even expressed as `%00x` is
                 // interpreted as just the 0 flag.
 
