@@ -1,8 +1,8 @@
-extension Collection where SubSequence == Self {
-  mutating func _eat(_ n: Int = 1) -> SubSequence {
-    defer { self = self.dropFirst(n) }
-    return self.prefix(n)
-  }
+
+internal enum SanePrefix {
+  case none
+  case radix // note this will not capitalize the x in "0x"
+  case custom(String)
 }
 
 
@@ -170,22 +170,9 @@ extension FixedWidthInteger {
     }
 
     if let separator = options.separator.separator {
-      var num = number[...]
-      let spacing = options.separator.spacing
-      if num.count % spacing != 0 {
-        os.write(String(num._eat(number.count % options.separator.spacing)))
-        if !num.isEmpty {
-          os.write(String(separator))
-        }
-      }
-
-      while !num.isEmpty {
-        assert(num.count % options.separator.spacing == 0)
-        os.write(String(num._eat(options.separator.spacing)))
-        if !num.isEmpty {
-          os.write(String(separator))
-        }
-      }
+      var num = number
+      num.intersperse(separator, every: options.separator.spacing, startingFrom: .end)
+      os.write(num)
     } else {
       os.write(number)
     }
