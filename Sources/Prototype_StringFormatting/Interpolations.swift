@@ -32,6 +32,8 @@ public protocol SwiftyStringFormatting {
 }
 
 // Default argument values
+//
+// TODO: Should we do this on SwiftyStringFormatting or just on DefaultStringInterpolation?
 extension SwiftyStringFormatting {
   public mutating func appendInterpolation<S: Sequence>(
     _ s: S,
@@ -95,9 +97,6 @@ extension DefaultStringInterpolation: SwiftyStringFormatting {
     align: String.Alignment
   ) {
     appendInterpolation(value.format(format).aligned(align))
-
-    // guard let spec = format.toFormatString(align) else { #condFail }
-    // ...
   }
 
 

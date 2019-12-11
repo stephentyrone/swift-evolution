@@ -17,8 +17,8 @@ p("\(54321, format: .hex(uppercase: true))")
 p("\(1234567890, format: .hex(includePrefix: true, minDigits: 12), align: .right(columns: 20))")
 // "      0x0000499602d2"
 
-p("\(9876543210, format: .hex(explicitPositiveSign: "👍"), align: .right(columns: 20, fill: "-"))")
-// "----------👍24cb016ea"
+p("\(9876543210, format: .hex(explicitPositiveSign: true), align: .right(columns: 20, fill: "-"))")
+// "----------+24cb016ea"
 
 p("\("Hi there", align: .left(columns: 20))!")
 // "Hi there            !"
