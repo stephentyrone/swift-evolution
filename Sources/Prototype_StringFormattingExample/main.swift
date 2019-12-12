@@ -49,13 +49,6 @@ p(String(format: "%d", 12345))
 p(String(format: "%+d", 12345))
 p(String(format: "% d", 12345))
 
-print(IntegerFormatting.inspectType(UInt8.self))
-print(IntegerFormatting.inspectType(Int8.self))
-print(IntegerFormatting.inspectType(Int32.self))
-print(IntegerFormatting.inspectType(Int.self))
-print(IntegerFormatting.inspectType(Int64.self))
-print(IntegerFormatting.inspectType(UInt64.self))
-
 struct BigInt: FixedWidthInteger {
   init<T>(_ source: T) where T : BinaryInteger { fatalError() }
   var magnitude: UInt { fatalError() }
@@ -107,5 +100,5 @@ struct BigInt: FixedWidthInteger {
   static func -= (lhs: inout BigInt, rhs: BigInt) { fatalError() }
 }
 
-print(IntegerFormatting.inspectType(BigInt.self))
+// TODO: test rejection of BigInt
 

@@ -1,7 +1,7 @@
 
 
 
-public struct SeparatorFormatting {
+public struct SeparatorFormatting: Equatable {
   public var separator: Character?
   public var spacing: Int
 
@@ -25,14 +25,35 @@ public struct SeparatorFormatting {
 
 }
 
-public struct IntegerFormatting {
-  var radix: Int
-  var explicitPositiveSign: Bool
-  var includePrefix: Bool
-  var uppercase: Bool
-  var minDigits: Int
-  var separator: SeparatorFormatting
+public struct IntegerFormatting: Equatable {
+  /// The base to use for the string representation. `radix` must be at least 2 and at most 36. The default is 10.
+  public var radix: Int
 
+  /// TODO
+  ///
+  /// Note: This means a + will be printed for all unsigned formatting
+  public var explicitPositiveSign: Bool
+
+  public var includePrefix: Bool
+
+  /// Whether to use uppercase letters to represent numerals
+  /// greater than 9 (default is to use lowercase)
+  public var uppercase: Bool
+
+  public var minDigits: Int
+
+  public var separator: SeparatorFormatting
+
+  /// TODO
+  ///
+  /// - Parameters:
+  ///   - radix: The base to use for the string representation. `radix` must be
+  ///     at least 2 and at most 36. The default is 10.
+  ///   - TODO: ...
+  ///   - uppercase: Pass `true` to use uppercase letters to represent numerals
+  ///     greater than 9, or `false` to use lowercase letters. The default is
+  ///     `false`.
+  ///   - TODO: ...
   public init(
     radix: Int = 10,
     explicitPositiveSign: Bool = false,
@@ -41,7 +62,7 @@ public struct IntegerFormatting {
     minDigits: Int = 1,
     separator: SeparatorFormatting = .none
   ) {
-    precondition(radix >= 0 && radix <= 36)
+    precondition(radix >= 2 && radix <= 36)
 
     self.radix = radix
     self.explicitPositiveSign = explicitPositiveSign
@@ -127,6 +148,10 @@ extension IntegerFormatting {
     default: return ""
     }
   }
+
+  // On positive signs
+  //
+  // ... <space> could be useful, but can be done by hand if necessary
 }
 
 extension FixedWidthInteger {
@@ -139,10 +164,12 @@ extension FixedWidthInteger {
     }
 
     // Sign
-    if self < 0 {
-      os.write("-")
-    } else if options.explicitPositiveSign {
-      os.write("+")
+    if Self.isSigned {
+      if self < 0 {
+        os.write("-")
+      } else if options.explicitPositiveSign {
+        os.write("+")
+      }
     }
 
     // Prefix
@@ -165,35 +192,33 @@ extension FixedWidthInteger {
 
 extension IntegerFormatting {
 
-  // Returns the length modifier and which decimal (signed vs unsigned) specifier to use
+  // Returns a fprintf-compatible length modifier for a given argument type
   //
   // @_compilerEvaluable
-  /*private*/ public // for testing
-  static func inspectType<I: FixedWidthInteger>(
+  private static func _formatStringLengthModifier<I: FixedWidthInteger>(
     _ type: I.Type
-  ) -> (lengthModifier: String, decimalSpecifier: Character)? { // TODO: better name
+  ) -> String? {
     // IEEE Std 1003.1-2017, length modifiers:
 
     switch type {
     //   hh - d, i, o, u, x, or X conversion specifier applies to (signed|unsigned) char
-    case is CChar.Type: return ("hh", "d")
-    case is CUnsignedChar.Type: return ("hh", "u")
+    case is CChar.Type: return "hh"
+    case is CUnsignedChar.Type: return "hh"
 
     //   h  - d, i, o, u, x, or X conversion specifier applies to (signed|unsigned) short
-    case is CShort.Type: return ("h", "d")
-    case is CUnsignedShort.Type: return ("h", "u")
+    case is CShort.Type: return "h"
+    case is CUnsignedShort.Type: return "h"
 
-    case is CInt.Type: return ("", "d")
-    case is CUnsignedInt.Type: return ("", "u")
+    case is CInt.Type: return ""
+    case is CUnsignedInt.Type: return ""
 
     //   l  - d, i, o, u, x, or X conversion specifier applies to (signed|unsigned) long
-    case is CLong.Type: return ("l", "d")
-    case is CUnsignedLong.Type: return ("l", "u")
+    case is CLong.Type: return "l"
+    case is CUnsignedLong.Type: return "l"
 
     //   ll - d, i, o, u, x, or X conversion specifier applies to (signed|unsigned) long long
-    case is CLongLong.Type: return ("ll", "d")
-
-    case is CUnsignedLongLong.Type: return ("ll", "u")
+    case is CLongLong.Type: return "ll"
+    case is CUnsignedLongLong.Type: return "ll"
 
     default: return nil
     }
@@ -205,72 +230,91 @@ extension IntegerFormatting {
   ) -> String? {
     // Based on IEEE Std 1003.1-2017
 
-    // Length modifier and which signed specifier to use if decimal
-    guard let (lengthMod, decimalSpecifier) = IntegerFormatting.inspectType(type) else {
+    // No separators supported
+    guard separator == SeparatorFormatting.none else { return nil }
+
+    // `d`/`i` is the only signed integral conversions allowed
+    guard !type.isSigned || radix == 10 else { return nil }
+
+    // IEEE: Each conversion specification is introduced by the '%' character after which the
+    //       following appear in sequence:
+    //       1. Zero or more flags (in any order), which modify the meaning of the conversion
+    //          specification.
+    //       2. An optional minimum field width. If the converted value has fewer bytes than the
+    //          field width, it shall be padded with <space> characters by default on the left; it
+    //          shall be padded on the right if the left-adjustment flag ( '-' ), is given to the
+    //          field width.
+    //       3. An optional precision that gives the minimum number of digits to appear for the
+    //          d, i, o, u, x, and X conversion specifiers ...
+    //       4. An optional length modifier that specifies the size of the argument.
+    //       5. A conversion specifier character that indicates the type of conversion to be applied.
+
+    // Use Swift style prefixes rather than fprintf style prefixes
+    var specification = "\(_prefix)%"
+
+    //
+    // 1. Flags
+    //
+
+    // Use `+` flag if signed, otherwise prefix a literal `+` for unsigned
+    if explicitPositiveSign {
+      // IEEE: `+` The result of a signed conversion shall always begin with a sign ( '+' or '-' )
+      if type.isSigned {
+        specification += "+"
+      } else {
+        specification.insert("+", at: specification.startIndex)
+      }
+    }
+
+    // IEEE: `-` The result of the conversion shall be left-justified within the field. The
+    //       conversion is right-justified if this flag is not specified.
+    if align.anchor == CollectionBound.start {
+      specification += "-"
+    }
+
+    // 2. Minimumn field width
+
+    // Padding has to be space
+    guard align.fill == " " else {
+      // IEEE: `0` Leading zeros (following any indication of sign or base) are used to pad to
+      //       the field width rather than performing space padding. If the '0' and '-' flags
+      //       both appear, the '0' flag is ignored. If a precision is specified, the '0' flag
+      //       shall be ignored.
+      //
+      // Commentary: `0` is when the user doesn't want to use precision (minDigits). This allows
+      //             sign and prefix characters to be counted towards field width (they wouldn't be
+      //             counted towards precision). This is more useful for floats, where precision is
+      //             digits after the radix. We're already handling prefix ourselves; we choose not
+      //             to support this functionality.
       return nil
     }
 
-    var flags = ""
+    if align.minimumColumnWidth > 0 {
+      specification += "\(align.minimumColumnWidth)"
+    }
 
-//    // Explicit positive sign
-//    if let sign = explicitPositiveSign {
-//      // IEEE Std 1003.1-2017, flag characters:
-//      //   +       The result of a signed conversion shall always begin with '+' or '-'
-//      //   <space> If the first character of a signed conversion is not a sign or if a signed
-//      //           conversion results in no characters, a <space> shall be prefixed to the result
-//
-//      //  Format strings only support explicit `+` or ` ` on signed conversions, which only exist
-//      //  on decimal numbers
-//      guard radix == 10 else { return nil }
-//
-//      // + or <space> are the only signs supported
-//      guard sign == " " || sign == "+" else { return nil }
-//
-//      // Only applies to signed conversions
-//      guard decimalSpecifier != "u" else { return nil }
-//
-//      // FIXME: this isn't quite right for <space>, because it will force a space if no characters
-//      //        are printed
-//
-//      flags.append(sign)
-//    }
-//
-//    // Prefix
-//    //
-//    // IEEE Std 1003.1-2017, flag characters:
-//    //   # Specifies that the value is to be converted to an alternative form:
-//    //     o    Increase the precision, if and only if necessary, to force the first digit of the
-//    //          result to be a zero (if the value and precision are both 0, a single 0 is printed).
-//    //     x/X  A non-zero result shall have 0x (or 0X) prefixed to it.
-//    let prefixFlag: String
-//    switch prefix {
-//    case .always(_): return nil
-//
-//    case .none:
-//      prefixFlag = ""
-//
-//    case .ifNonZero(let s):
-//      guard radix == 16 else { return nil }
-//      guard s == "0X" && uppercase || s == "0x" && !uppercase else { return nil }
-//      prefixFlag = "#"
-//
-//    case .leadingZero:
-//      guard radix == 8 else { return nil }
-//      prefixFlag = "#"
-//    }
+    // 3. Precision
 
-    // Pick the specifier
-    let specifier: Character
+    // Default precision for integers is 1, otherwise use the requested precision
+    if minDigits != 1 {
+      specification += ".\(minDigits)"
+    }
+
+    // 4. Length modifier
+    guard let lengthMod = IntegerFormatting._formatStringLengthModifier(type) else { return nil }
+    specification += lengthMod
+
+    // 5. The conversion specifier
     switch radix {
-    case 16:
-      specifier = uppercase ? "X" : "x"
     case 10:
-      specifier = decimalSpecifier
+      specification += "d"
     case 8:
-      specifier = "o"
+      specification += "o"
+    case 16:
+      specification += uppercase ? "X" : "x"
     default: return nil
     }
 
-    fatalError()
+    return specification
   }
 }
