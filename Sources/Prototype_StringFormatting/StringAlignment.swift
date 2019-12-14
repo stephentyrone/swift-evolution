@@ -7,6 +7,7 @@ extension String {
     public var fill: Character
 
     // FIXME: What about full-width and wide characters?
+    // ^ This should be associated with RRC and done in terms of element count
 
     public init(
       minimumColumnWidth: Int = 0,

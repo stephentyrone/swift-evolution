@@ -26,16 +26,16 @@ p("\("Hi there", align: .left(columns: 20))!")
 p("\(-1234567890, format: .hex(includePrefix: true, minDigits: 12), align: .right(columns: 20))")
 // "     -0x0000499602d2"
 
-p("\(-1234567890, format: .hex(minDigits: 12, separator: .every(2, "_")), align: .right(columns: 20))")
+p("\(-1234567890, format: .hex(minDigits: 12, separator: .every(2, separator: "_")), align: .right(columns: 20))")
 // "     -00_00_49_96_02_d2"
 
-p("\(1234567890, format: .decimal(separator: .thousands("⌟")))")
+p("\(1234567890, format: .decimal(separator: .thousands(separator: "⌟")))")
 // "1⌟234⌟567⌟890"
 
 p("\(123.4567)")
 // "123.4567"
 
-p("\(98765, format: .hex(includePrefix: true, minDigits: 8, separator: .every(2, "_")))")
+p("\(98765, format: .hex(includePrefix: true, minDigits: 8, separator: .every(2, separator: "_")))")
 // 0x00_01_81_cd
 
 p("\(12345, format: .hex(minDigits: 5))")
@@ -102,3 +102,7 @@ struct BigInt: FixedWidthInteger {
 
 // TODO: test rejection of BigInt
 
+let align = String.Alignment.right(columns: 6)
+for i in 3..<13 {
+  p("\(i, align: align) \(i*i, align: align) \(i*i*i, align: align)")
+}

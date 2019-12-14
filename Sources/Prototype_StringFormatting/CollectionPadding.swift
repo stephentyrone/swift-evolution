@@ -53,6 +53,7 @@ extension RangeReplaceableCollection {
     let insertIdx = bound == .start ? self.startIndex : self.endIndex
     self.insert(contentsOf: filler, at: insertIdx)
   }
+  // TODO: Align/justify version, which just swaps the bound?
 }
 
 
@@ -66,9 +67,17 @@ extension Collection where SubSequence == Self {
 
 extension RangeReplaceableCollection {
   // TODO: Needs a new replaceSubrange hook that returns the new range for efficiency
+  // pitch the customization hook on its own, default behavior does the count thing
+  //
   public mutating func intersperse(
-    _ newElement: Element, every n: Int, startingFrom: CollectionBound
+    _ newElement: Element, every n: Int, startingFrom bound: CollectionBound
   ) {
+    self.intersperse(contentsOf: CollectionOfOne(newElement), every: n, startingFrom: bound)
+  }
+
+  public mutating func intersperse<C: Collection>(
+    contentsOf newElements : C, every n: Int, startingFrom bound: CollectionBound
+  ) where C.Element == Element {
     precondition(n > 0)
 
     let currentCount = self.count
@@ -83,23 +92,16 @@ extension RangeReplaceableCollection {
     var selfConsumer = self[...]
 
     // Handle any prefix stragglers
-    if remainder != 0 && startingFrom == .end {
+    if remainder != 0 && bound == .end {
       result.append(contentsOf: selfConsumer._eat(remainder))
       assert(!selfConsumer.isEmpty, "Guarded count above")
-      result.append(newElement)
+      result.append(contentsOf: newElements)
     }
     while !selfConsumer.isEmpty {
       result.append(contentsOf: selfConsumer._eat(n))
       if !selfConsumer.isEmpty {
-        result.append(newElement)
+        result.append(contentsOf: newElements)
       }
     }
-    self = result
-  }
-
-  public mutating func intersperse<C: Collection>(
-    contentsOf newElements : C, every n: Int, startingFrom: CollectionBound
-  ) {
-    fatalError("TODO")
-  }
+    self = result  }
 }

@@ -14,15 +14,13 @@ public struct SeparatorFormatting: Equatable {
     SeparatorFormatting()
   }
 
-  public static func every(_ n: Int, _ separator: Character = ",") -> SeparatorFormatting {
+  public static func every(_ n: Int, separator: Character) -> SeparatorFormatting {
     SeparatorFormatting(separator: separator, spacing: n)
   }
 
-  public static func thousands(_ separator: Character = ",") -> SeparatorFormatting {
-    .every(3, separator)
+  public static func thousands(separator: Character) -> SeparatorFormatting {
+    .every(3, separator: separator)
   }
-  public static var thousands: SeparatorFormatting { .thousands() }
-
 }
 
 public struct IntegerFormatting: Equatable {
@@ -32,7 +30,8 @@ public struct IntegerFormatting: Equatable {
   /// TODO
   ///
   /// Note: This means a + will be printed for all unsigned formatting
-  public var explicitPositiveSign: Bool
+  public var explicitPositiveSign: Bool // space is left to higher level, use col width
+  // Could be argument to not even do this...
 
   public var includePrefix: Bool
 
@@ -154,35 +153,34 @@ extension IntegerFormatting {
   // ... <space> could be useful, but can be done by hand if necessary
 }
 
-extension FixedWidthInteger {
-  // TODO: Is this interface essential? Should we take an alignment struct?
-  public func format<OS: TextOutputStream>(
-    _ options: IntegerFormatting = IntegerFormatting(), into os: inout OS
+extension IntegerFormatting: FixedWidthIntegerFormatter {
+  public func format<I: FixedWidthInteger, OS: TextOutputStream>(
+    _ i: I, into os: inout OS
   ) {
-    if self == 0 && options.minDigits == 0 {
+    if i == 0 && self.minDigits == 0 {
       return
     }
 
     // Sign
-    if Self.isSigned {
-      if self < 0 {
+    if I.isSigned {
+      if i < 0 {
         os.write("-")
-      } else if options.explicitPositiveSign {
+      } else if self.explicitPositiveSign {
         os.write("+")
       }
     }
 
     // Prefix
-    os.write(options._prefix)
+    os.write(self._prefix)
 
     // Digits
     let number = String(
-      self.magnitude, radix: options.radix, uppercase: options.uppercase
-    ).aligned(.right(columns: options.minDigits, fill: "0"))
-
-    if let separator = options.separator.separator {
+      i.magnitude, radix: self.radix, uppercase: self.uppercase
+    ).aligned(.right(columns: self.minDigits, fill: "0"))
+    if let separator = self.separator.separator {
       var num = number
-      num.intersperse(separator, every: options.separator.spacing, startingFrom: .end)
+      num.intersperse(
+        separator, every: self.separator.spacing, startingFrom: .end)
       os.write(num)
     } else {
       os.write(number)
@@ -286,6 +284,8 @@ extension IntegerFormatting {
       //             counted towards precision). This is more useful for floats, where precision is
       //             digits after the radix. We're already handling prefix ourselves; we choose not
       //             to support this functionality.
+      //
+      // TODO: consider providing a static function to emulate the behavior... (not everything).
       return nil
     }
 

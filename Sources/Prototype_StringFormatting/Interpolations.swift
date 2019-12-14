@@ -96,7 +96,7 @@ extension DefaultStringInterpolation: SwiftyStringFormatting {
     format: IntegerFormatting,
     align: String.Alignment
   ) {
-    appendInterpolation(value.format(format).aligned(align))
+    appendInterpolation(format.format(value).aligned(align))
   }
 
 
