@@ -8,6 +8,8 @@ func p<C: Collection>(
 
 print("Examples:")
 
+p("\(12345678, format: .decimal(minDigits: 2), align: .right(columns: 3, fill: " "))")
+
 p("\(54321, format: .hex)")
 // "d431"
 

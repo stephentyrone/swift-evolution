@@ -1,5 +1,5 @@
 
-
+// Steve: includePrefix should be true by default...
 
 public struct SeparatorFormatting: Equatable {
   public var separator: Character?
