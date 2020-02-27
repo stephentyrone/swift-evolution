@@ -1,6 +1,3 @@
-
-// Steve: includePrefix should be true by default...
-
 public struct SeparatorFormatting: Equatable {
   public var separator: Character?
   public var spacing: Int
@@ -56,7 +53,7 @@ public struct IntegerFormatting: Equatable {
   public init(
     radix: Int = 10,
     explicitPositiveSign: Bool = false,
-    includePrefix: Bool = false,
+    includePrefix: Bool = true,
     uppercase: Bool = false,
     minDigits: Int = 1,
     separator: SeparatorFormatting = .none
@@ -87,7 +84,7 @@ public struct IntegerFormatting: Equatable {
 
   public static func hex(
     explicitPositiveSign: Bool = false,
-    includePrefix: Bool = false,
+    includePrefix: Bool = true,
     uppercase: Bool = false,
     minDigits: Int = 1,
     separator: SeparatorFormatting = .none
@@ -105,7 +102,7 @@ public struct IntegerFormatting: Equatable {
 
   public static func octal(
     explicitPositiveSign: Bool = false,
-    includePrefix: Bool = false,
+    includePrefix: Bool = true,
     uppercase: Bool = false,
     minDigits: Int = 1,  // TODO: document if prefix is zero!
     separator: SeparatorFormatting = .none

@@ -126,9 +126,9 @@ final class Prototype_StringFormatting: XCTestCase {
   }
 
   func test_zero() {
-    expectEqual("0", "\(0, format: .octal())")
+    expectEqual("0", "\(0, format: .octal(includePrefix: false))")
     expectEqual("", "\(0, format: .octal(minDigits: 0))")
-    expectEqual("0o0", "\(0, format: .octal(includePrefix: true))")
+    expectEqual("0o0", "\(0, format: .octal())")
     expectEqual("", "\(0, format: .octal(includePrefix: true, minDigits: 0))")
 
     // TODO: exhaustive corner cases
