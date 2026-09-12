@@ -4,6 +4,7 @@
 * Authors: [Stephen Canon](https://github.com/stephentyrone)
 * Review Manager: TBD
 * Status: **Awaiting review**
+* Implementation: https://github.com/swiftlang/swift/pull/92206
 * Review: [(pitch)](https://forums.swift.org/t/pitch-round-to-nearest/89497)
 
 ## Summary of changes
